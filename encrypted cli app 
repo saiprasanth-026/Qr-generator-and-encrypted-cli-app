@@ -1,0 +1,63 @@
+from cryptography.fernet import Fernet
+from datetime import datetime
+import os
+
+KEY_FILE = 'secret.key'
+NOTES_FILE = 'notes.txt'
+
+# Generate a key and save it
+def generate_key():
+    key = Fernet.generate_key()
+    with open(KEY_FILE, 'wb') as key_file:
+        key_file.write(key)
+
+# Load key
+def load_key():
+    if not os.path.exists(KEY_FILE):
+        generate_key()
+    with open(KEY_FILE, 'rb') as key_file:
+        return key_file.read()
+
+# Encrypt and save note
+def write_note():
+    note = input("Enter your note: ")
+    fernet = Fernet(load_key())
+    encrypted_note = fernet.encrypt(note.encode())
+
+    with open(NOTES_FILE, 'ab') as file:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        file.write(f"{timestamp} :: ".encode() + encrypted_note + b"\n")
+    print("Note saved successfully!")
+
+# Decrypt and read all notes
+def read_notes():
+    fernet = Fernet(load_key())
+    if not os.path.exists(NOTES_FILE):
+        print("No notes found.")
+        return
+
+    with open(NOTES_FILE, 'rb') as file:
+        for line in file:
+            try:
+                timestamp, enc_note = line.split(b" :: ")
+                note = fernet.decrypt(enc_note.strip()).decode()
+                print(f"{timestamp.decode()} -> {note}")
+            except:
+                print("Error reading a note.")
+
+# CLI menu
+def main():
+    print("🔐 Encrypted Notes App")
+    print("1. Write a new note")
+    print("2. Read all notes")
+    choice = input("Choose an option (1 or 2): ")
+
+    if choice == '1':
+        write_note()
+    elif choice == '2':
+        read_notes()
+    else:
+        print("Invalid choice!")
+
+if __name__ == "__main__":
+    main()
