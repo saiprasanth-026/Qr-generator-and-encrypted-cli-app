@@ -1,0 +1,1 @@
+# Qr-generator-and-encrypted-cli-app
